@@ -1,0 +1,208 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "PostgreSQL"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT day AS \"time\", env_name, active_users\nFROM conda_env_daily_usage\nWHERE $__timeFilter(day)\n  AND ('${env_name:raw}' = '__all' OR env_name IN (${env_name:sqlstring}))\nORDER BY 1, 2",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Users by Environment",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "PostgreSQL"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT day AS \"time\", env_name, sessions\nFROM conda_env_daily_usage\nWHERE $__timeFilter(day)\n  AND ('${env_name:raw}' = '__all' OR env_name IN (${env_name:sqlstring}))\nORDER BY 1, 2",
+          "refId": "A"
+        }
+      ],
+      "title": "Sessions by Environment",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "PostgreSQL"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 4,
+      "options": {
+        "footer": {
+          "show": false
+        }
+      },
+      "targets": [
+        {
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT s.user_id,\n       count(*) AS sessions,\n       count(DISTINCT p.package_name) AS unique_packages,\n       max(s.event_time) AS last_seen\nFROM conda_env_sessions s\nLEFT JOIN conda_env_packages p ON p.event_hash = s.event_hash\nWHERE $__timeFilter(s.event_time)\n  AND ('${env_name:raw}' = '__all' OR s.env_name IN (${env_name:sqlstring}))\nGROUP BY s.user_id\nORDER BY sessions DESC\nLIMIT 30",
+          "refId": "A"
+        }
+      ],
+      "title": "Top Users",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "PostgreSQL"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "id": 5,
+      "options": {
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none"
+      },
+      "targets": [
+        {
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT s.env_name, count(DISTINCT s.user_id) AS unique_users\nFROM conda_env_sessions s\nWHERE $__timeFilter(s.event_time)\n  AND ('${env_name:raw}' = '__all' OR s.env_name IN (${env_name:sqlstring}))\nGROUP BY s.env_name\nORDER BY unique_users DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Unique Users by Environment",
+      "type": "barchart"
+    }
+  ],
+  "refresh": "30m",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "xp65",
+    "conda",
+    "telemetry"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "__all"
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "PostgreSQL"
+        },
+        "includeAll": true,
+        "allValue": "__all",
+        "multi": true,
+        "name": "env_name",
+        "options": [],
+        "query": "SELECT DISTINCT env_name FROM conda_env_sessions ORDER BY env_name",
+        "refresh": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "title": "XP65 Conda Telemetry",
+  "uid": "xp65-conda-telemetry",
+  "version": 1
+}

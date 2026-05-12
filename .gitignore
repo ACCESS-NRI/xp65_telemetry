@@ -1,0 +1,22 @@
+# Local volumes and cache
+.DS_Store
+__pycache__
+*.pyc
+*.egg-info
+.pytest_cache
+*.doit.db
+
+# Docker compose volumes (if using named volumes)
+postgres_data/
+grafana_data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+/tmp/
+*.ndjson
+*.log
