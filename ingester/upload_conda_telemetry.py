@@ -3,12 +3,14 @@ import argparse
 import datetime
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
 
 DDL_DEFAULT_PATH = Path(__file__).parent / "schema.sql"
 STDLIB_MODULES = set(getattr(sys, "stdlib_module_names", []))
+VERSION_SPLIT_RE = re.compile(r"[<>=!~ ]")
 
 
 def load_schema(cur, schema_file: Path):
@@ -41,10 +43,49 @@ def normalize_package_name(raw_pkg):
     return top_level
 
 
+def parse_package_spec_line(raw_line: str):
+    line = raw_line.split("#", 1)[0].strip()
+    if not line:
+        return None
+    if line.startswith("-"):
+        line = line[1:].strip()
+    if not line or line.endswith(":"):
+        return None
+    if "::" in line:
+        line = line.split("::", 1)[1]
+    token = VERSION_SPLIT_RE.split(line, 1)[0].strip()
+    if not token:
+        return None
+    return token
+
+
+def load_tracked_packages(tracked_file: Path):
+    tracked_packages = set()
+    with tracked_file.open("r", encoding="utf-8") as fh:
+        for raw_line in fh:
+            parsed = parse_package_spec_line(raw_line)
+            if not parsed:
+                continue
+            normalized = normalize_package_name(parsed)
+            if normalized:
+                tracked_packages.add(normalized)
+            # Many conda package names contain '-' while imports use '_'.
+            if "-" in parsed:
+                normalized_alt = normalize_package_name(parsed.replace("-", "_"))
+                if normalized_alt:
+                    tracked_packages.add(normalized_alt)
+    return tracked_packages
+
+
 def main():
     parser = argparse.ArgumentParser(description="Upload users-only conda telemetry into Postgres")
     parser.add_argument("--db", required=True, help="Postgres connection string")
     parser.add_argument("--schema-file", default=str(DDL_DEFAULT_PATH), help="Schema SQL file path")
+    parser.add_argument(
+        "--tracked-packages-file",
+        default="",
+        help="Optional package spec/allowlist file; when set, only these normalized packages are tracked",
+    )
     parser.add_argument(
         "--cleanup-existing-packages",
         action="store_true",
@@ -55,6 +96,12 @@ def main():
 
     input_file = Path(args.input_file)
     schema_file = Path(args.schema_file)
+    tracked_packages = set()
+    if args.tracked_packages_file:
+        tracked_file = Path(args.tracked_packages_file)
+        if not tracked_file.exists():
+            raise FileNotFoundError(f"tracked packages file not found: {tracked_file}")
+        tracked_packages = load_tracked_packages(tracked_file)
 
     import psycopg2
     from psycopg2.extras import execute_batch
@@ -67,14 +114,25 @@ def main():
 
             deleted_existing_packages = 0
             if args.cleanup_existing_packages:
-                cur.execute(
-                    """
-                    DELETE FROM conda_env_packages
-                    WHERE left(package_name, 1) = '_'
-                       OR package_name = ANY(%s)
-                    """,
-                    (sorted(STDLIB_MODULES),),
-                )
+                if tracked_packages:
+                    cur.execute(
+                        """
+                        DELETE FROM conda_env_packages
+                        WHERE left(package_name, 1) = '_'
+                           OR package_name = ANY(%s)
+                           OR package_name <> ALL(%s)
+                        """,
+                        (sorted(STDLIB_MODULES), sorted(tracked_packages)),
+                    )
+                else:
+                    cur.execute(
+                        """
+                        DELETE FROM conda_env_packages
+                        WHERE left(package_name, 1) = '_'
+                           OR package_name = ANY(%s)
+                        """,
+                        (sorted(STDLIB_MODULES),),
+                    )
                 deleted_existing_packages = cur.rowcount
 
         conn.commit()
@@ -85,6 +143,7 @@ def main():
         rows_seen = 0
         session_batch = []
         package_batch = []
+        skipped_untracked_packages = 0
 
         def flush(cur):
             nonlocal total_sessions, total_packages
@@ -165,6 +224,9 @@ def main():
                         normalized_pkg = normalize_package_name(pkg)
                         if not normalized_pkg or normalized_pkg in seen_packages:
                             continue
+                        if tracked_packages and normalized_pkg not in tracked_packages:
+                            skipped_untracked_packages += 1
+                            continue
                         seen_packages.add(normalized_pkg)
                         package_batch.append((event_hash, normalized_pkg))
                 except Exception:
@@ -194,6 +256,8 @@ def main():
         "rows_parsed": total_sessions,
         "packages_inserted": total_packages,
         "packages_deleted_existing": deleted_existing_packages,
+        "tracked_packages_count": len(tracked_packages),
+        "packages_skipped_untracked": skipped_untracked_packages,
         "bad_rows": bad_rows,
     }
     print(json.dumps(summary, sort_keys=True))

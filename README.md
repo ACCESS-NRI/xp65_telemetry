@@ -60,6 +60,18 @@ LOGS_SOURCE=/home/romain/NCI_gadi/xp65_logs
 INGEST_MAX_FILES=0
 ```
 
+### Configure tracked packages
+
+The ingester can restrict tracking to a configurable package allowlist file:
+
+- Edit [ingester/tracked_packages.txt](ingester/tracked_packages.txt) using your environment-style package lines.
+- During ingestion, only normalized package names from this file are inserted into `conda_env_packages`.
+- To clean old rows that are not in the allowlist, run ingestion with cleanup once:
+
+```bash
+docker compose run --rm --entrypoint bash ingester -lc 'DBURL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"; python /app/upload_conda_telemetry.py --db "$DBURL" --schema-file /schema.sql --tracked-packages-file /app/tracked_packages.txt --cleanup-existing-packages /dev/null'
+```
+
 ## Database Schema
 
 Tables:

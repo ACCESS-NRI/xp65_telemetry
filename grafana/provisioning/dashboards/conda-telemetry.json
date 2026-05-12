@@ -261,7 +261,7 @@
         {
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT date_trunc('day', s.event_time) AS \"time\",\n       p.package_name,\n       count(DISTINCT s.user_id) AS unique_users\nFROM conda_env_sessions s\nJOIN conda_env_packages p ON p.event_hash = s.event_hash\nWHERE $__timeFilter(s.event_time)\n  AND ('${env_name:raw}' = '__all' OR s.env_name IN (${env_name:sqlstring}))\n  AND p.package_name IN ('access-moppy', 'esmvaltool', 'ilamb')\nGROUP BY 1, 2\nORDER BY 1, 2",
+          "rawSql": "SELECT date_trunc('day', s.event_time) AS \"time\",\n       p.package_name,\n       count(DISTINCT s.user_id) AS unique_users\nFROM conda_env_sessions s\nJOIN conda_env_packages p ON p.event_hash = s.event_hash\nWHERE $__timeFilter(s.event_time)\n  AND ('${env_name:raw}' = '__all' OR s.env_name IN (${env_name:sqlstring}))\n  AND p.package_name IN ('access_moppy', 'esmvaltool', 'esmvalcore', 'ilamb')\nGROUP BY 1, 2\nORDER BY 1, 2",
           "refId": "A"
         }
       ],
@@ -311,12 +311,66 @@
         {
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT s.env_name,\n       p.package_name,\n       count(DISTINCT s.user_id) AS unique_users,\n       count(*) AS total_sessions\nFROM conda_env_sessions s\nJOIN conda_env_packages p ON p.event_hash = s.event_hash\nWHERE $__timeFilter(s.event_time)\n  AND ('${env_name:raw}' = '__all' OR s.env_name IN (${env_name:sqlstring}))\n  AND p.package_name IN ('access-moppy', 'esmvaltool', 'ilamb')\nGROUP BY 1, 2\nORDER BY total_sessions DESC",
+          "rawSql": "SELECT s.env_name,\n       p.package_name,\n       count(DISTINCT s.user_id) AS unique_users,\n       count(*) AS total_sessions\nFROM conda_env_sessions s\nJOIN conda_env_packages p ON p.event_hash = s.event_hash\nWHERE $__timeFilter(s.event_time)\n  AND ('${env_name:raw}' = '__all' OR s.env_name IN (${env_name:sqlstring}))\n  AND p.package_name IN ('access_moppy', 'esmvaltool', 'esmvalcore', 'ilamb')\nGROUP BY 1, 2\nORDER BY total_sessions DESC",
           "refId": "A"
         }
       ],
       "title": "Key Package Totals by Environment (access_moppy / esmvaltool / esmvalcore / ilamb)",
       "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "PostgreSQL"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 63
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT count(DISTINCT s.user_id) AS total_users\nFROM conda_env_sessions s\nWHERE $__timeFilter(s.event_time)",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Users Across All Environments",
+      "type": "stat"
     }
   ],
   "refresh": "30m",

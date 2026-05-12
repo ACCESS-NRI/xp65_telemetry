@@ -14,6 +14,12 @@ echo "[$(date)] Database: ${DBURL}"
 
 echo "[$(date)] Mode: users_only"
 
+TRACKED_PACKAGES_OPTION=""
+if [ -f "/app/tracked_packages.txt" ]; then
+  TRACKED_PACKAGES_OPTION="--tracked-packages-file /app/tracked_packages.txt"
+  echo "[$(date)] Tracking package allowlist from /app/tracked_packages.txt"
+fi
+
 # Allow custom max files, default to all (0)
 MAX_FILES_OPTION=""
 if [ -n "$INGEST_MAX_FILES" ] && [ "$INGEST_MAX_FILES" != "0" ]; then
@@ -28,6 +34,7 @@ echo "[$(date)] Starting upload_conda_telemetry.py (stream mode)..."
 python /app/upload_conda_telemetry.py \
   --db "$DBURL" \
   --schema-file /schema.sql \
+  $TRACKED_PACKAGES_OPTION \
   "$STREAM_FILE" &
 UPLOAD_PID=$!
 
