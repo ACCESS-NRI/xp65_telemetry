@@ -228,6 +228,95 @@
       ],
       "title": "All Packages by Environment",
       "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "PostgreSQL"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2 }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 45
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT date_trunc('day', s.event_time) AS \"time\",\n       p.package_name,\n       count(DISTINCT s.user_id) AS unique_users\nFROM conda_env_sessions s\nJOIN conda_env_packages p ON p.event_hash = s.event_hash\nWHERE $__timeFilter(s.event_time)\n  AND ('${env_name:raw}' = '__all' OR s.env_name IN (${env_name:sqlstring}))\n  AND p.package_name IN ('access-moppy', 'esmvaltool', 'ilamb')\nGROUP BY 1, 2\nORDER BY 1, 2",
+          "refId": "A"
+        }
+      ],
+      "title": "Key Package Usage Over Time (access_moppy / esmvaltool / esmvalcore / ilamb)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "PostgreSQL"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "displayMode": "auto" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "unique_users" },
+            "properties": [ { "id": "displayName", "value": "Unique Users" } ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "total_sessions" },
+            "properties": [ { "id": "displayName", "value": "Sessions" } ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "package_name" },
+            "properties": [ { "id": "displayName", "value": "Package" } ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "env_name" },
+            "properties": [ { "id": "displayName", "value": "Environment" } ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 55
+      },
+      "id": 8,
+      "options": {
+        "footer": { "show": false },
+        "sortBy": [{ "desc": true, "displayName": "Sessions" }]
+      },
+      "targets": [
+        {
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT s.env_name,\n       p.package_name,\n       count(DISTINCT s.user_id) AS unique_users,\n       count(*) AS total_sessions\nFROM conda_env_sessions s\nJOIN conda_env_packages p ON p.event_hash = s.event_hash\nWHERE $__timeFilter(s.event_time)\n  AND ('${env_name:raw}' = '__all' OR s.env_name IN (${env_name:sqlstring}))\n  AND p.package_name IN ('access-moppy', 'esmvaltool', 'ilamb')\nGROUP BY 1, 2\nORDER BY total_sessions DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Key Package Totals by Environment (access_moppy / esmvaltool / esmvalcore / ilamb)",
+      "type": "table"
     }
   ],
   "refresh": "30m",
