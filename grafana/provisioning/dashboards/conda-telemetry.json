@@ -123,7 +123,7 @@
         {
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT s.user_id,\n       count(*) AS sessions,\n       count(DISTINCT p.package_name) AS unique_packages,\n       max(s.event_time) AS last_seen\nFROM conda_env_sessions s\nLEFT JOIN conda_env_packages p ON p.event_hash = s.event_hash\nWHERE $__timeFilter(s.event_time)\n  AND ('${env_name:raw}' = '__all' OR s.env_name IN (${env_name:sqlstring}))\nGROUP BY s.user_id\nORDER BY sessions DESC\nLIMIT 30",
+          "rawSql": "SELECT s.user_id,\n       count(*) AS sessions,\n       (\n         SELECT count(DISTINCT p.package_name)\n         FROM conda_env_packages p\n         JOIN conda_env_sessions s2 ON s2.event_hash = p.event_hash\n         WHERE s2.user_id = s.user_id\n           AND $__timeFilter(s2.event_time)\n           AND ('${env_name:raw}' = '__all' OR s2.env_name IN (${env_name:sqlstring}))\n       ) AS unique_packages,\n       max(s.event_time) AS last_seen\nFROM conda_env_sessions s\nWHERE $__timeFilter(s.event_time)\n  AND ('${env_name:raw}' = '__all' OR s.env_name IN (${env_name:sqlstring}))\nGROUP BY s.user_id\nORDER BY sessions DESC\nLIMIT 30",
           "refId": "A"
         }
       ],
@@ -165,6 +165,69 @@
       ],
       "title": "Unique Users by Environment",
       "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "PostgreSQL"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "package_uses" },
+            "properties": [
+              { "id": "displayName", "value": "Uses" },
+              { "id": "custom.width", "value": 100 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "package_rank" },
+            "properties": [
+              { "id": "displayName", "value": "Rank" },
+              { "id": "custom.width", "value": 70 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "env_name" },
+            "properties": [
+              { "id": "displayName", "value": "Environment" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "package_name" },
+            "properties": [
+              { "id": "displayName", "value": "Package" }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 20,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "id": 6,
+      "options": {
+        "footer": { "show": false },
+        "sortBy": [{ "desc": false, "displayName": "Rank" }]
+      },
+      "targets": [
+        {
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT env_name, package_name, package_uses, package_rank\nFROM conda_env_package_ranking_by_env\nWHERE ('${env_name:raw}' = '__all' OR env_name IN (${env_name:sqlstring}))\n  AND left(package_name, 1) <> '_'\nORDER BY env_name, package_rank",
+          "refId": "A"
+        }
+      ],
+      "title": "All Packages by Environment",
+      "type": "table"
     }
   ],
   "refresh": "30m",
@@ -189,7 +252,7 @@
         },
         "includeAll": true,
         "allValue": "__all",
-        "multi": true,
+        "multi": false,
         "name": "env_name",
         "options": [],
         "query": "SELECT DISTINCT env_name FROM conda_env_sessions ORDER BY env_name",

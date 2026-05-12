@@ -24,6 +24,7 @@ services:
     container_name: xp65-grafana
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_EXPLORE_ENABLED: "true"
     ports:
       - "${GRAFANA_PORT}:3000"
     volumes:

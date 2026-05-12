@@ -12,4 +12,7 @@ datasources:
       password: postgres
     jsonData:
       sslmode: disable
+      postgresVersion: 1600
+      timescaledb: false
+    editable: true
     isDefault: true
