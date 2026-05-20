@@ -70,6 +70,13 @@ INGEST_MAX_FILES=0
 - Set `DATABASE_URL` in `.env` if you want the ingester to target a managed PostgreSQL instance.
 - This is intentionally a minimal ingestion-side change; Grafana provisioning still points at the local Compose PostgreSQL service.
 
+### Django middle-layer option
+
+- Yes: a Django service can sit between raw telemetry and PostgreSQL if you want model-level validation, filtering, auth, or future admin/reporting features.
+- This repo now includes `django_scaffold.py`, a single-file scaffold with ORM models matching the current tables plus an example batched ingestion endpoint.
+- The intended flow would be: xp65 dump/ingester -> HTTP POST to Django -> Django ORM writes to PostgreSQL.
+- This is scaffold material only for now; it does not replace the current direct-to-Postgres ingestion path.
+
 ### Configure tracked packages
 
 The ingester can restrict tracking to a configurable package allowlist file:
