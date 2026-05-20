@@ -2,7 +2,11 @@
 set -e
 
 # Build database connection string
-DBURL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+if [ -n "$DATABASE_URL" ]; then
+  DBURL="$DATABASE_URL"
+else
+  DBURL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+fi
 
 # Output file for flattened telemetry
 NDJSON_FILE="/tmp/conda_imports_$(date +%s).ndjson"
