@@ -74,7 +74,14 @@ INGEST_MAX_FILES=0
 
 - Yes: a Django service can sit between raw telemetry and PostgreSQL if you want model-level validation, filtering, auth, or future admin/reporting features.
 - This repo now includes `django_scaffold.py`, a single-file scaffold with ORM models matching the current tables plus an example batched ingestion endpoint.
+- It also includes `post_telemetry_demo.py`, a tiny client-side demo script that POSTs NDJSON telemetry batches to that endpoint.
 - The intended flow would be: xp65 dump/ingester -> HTTP POST to Django -> Django ORM writes to PostgreSQL.
+
+Example demo client usage:
+
+```bash
+python3 post_telemetry_demo.py http://localhost:8000/ingest /path/to/flattened.ndjson
+```
 - This is scaffold material only for now; it does not replace the current direct-to-Postgres ingestion path.
 
 ### Configure tracked packages
