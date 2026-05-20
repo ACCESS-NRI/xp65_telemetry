@@ -44,6 +44,7 @@ services:
       dockerfile: Dockerfile
     container_name: xp65-ingester
     environment:
+      DATABASE_URL: ${DATABASE_URL:-}
       DB_HOST: ${DB_HOST}
       DB_PORT: "5432"
       DB_NAME: ${DB_NAME}

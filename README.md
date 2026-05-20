@@ -26,6 +26,8 @@ A standalone Docker-based analytics system for ingesting and visualizing conda e
    - Start Grafana
    - Provision datasource and dashboard automatically
 
+   If you set `DATABASE_URL`, the ingester will send data to that managed PostgreSQL instance instead of using the local Compose database.
+
 4. **Access Grafana:**
    - Open http://localhost:3000
    - Login: `admin` / `admin`
@@ -45,7 +47,10 @@ A standalone Docker-based analytics system for ingesting and visualizing conda e
 Edit `.env` to customize:
 
 ```env
-# Database credentials
+# Optional: managed PostgreSQL connection string for the ingester
+DATABASE_URL=postgresql://USER:PASSWORD@managed-db.example.com:5432/RESOURCES
+
+# Database credentials (used when DATABASE_URL is not set)
 DB_PASSWORD=postgres
 DB_USER=postgres
 DB_NAME=RESOURCES
@@ -59,6 +64,11 @@ LOGS_SOURCE=/home/romain/NCI_gadi/xp65_logs
 # Optional: limit files per ingest run (0 = all)
 INGEST_MAX_FILES=0
 ```
+
+### Managed database notes
+
+- Set `DATABASE_URL` in `.env` if you want the ingester to target a managed PostgreSQL instance.
+- This is intentionally a minimal ingestion-side change; Grafana provisioning still points at the local Compose PostgreSQL service.
 
 ### Configure tracked packages
 
