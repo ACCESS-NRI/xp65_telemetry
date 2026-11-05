@@ -178,3 +178,9 @@ xp65-telemetry/
 - Adjust Grafana dashboard panels for specific use cases
 - Plan retention/archival policy if telemetry grows
 - Consider scheduling periodic re-ingestion (cron outside container)
+
+## Licence
+
+Except where otherwise noted, this repository is licensed under the [Apache License, Version 2.0](LICENSE).
+
+Third-party software, material, and datasets retain their original licences and attribution requirements.
